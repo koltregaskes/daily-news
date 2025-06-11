@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily AI News - Stay Updated with the Latest AI Developments</title>
+    <meta name="description" content="Daily curated AI news from top sources including TechCrunch, The Information, Nature, and more.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__content">
+                <div class="header__brand">
+                    <h1 class="header__title">
+                        <i class="fas fa-newspaper"></i>
+                        Daily AI News
+                    </h1>
+                    <p class="header__subtitle">Curated AI news from top sources</p>
+                </div>
+                
+                <div class="header__search">
+                    <div class="search-container">
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search articles...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="main__layout">
+                <aside class="sidebar">
+                    <div class="filter-section">
+                        <h3 class="filter-title">Filters</h3>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Date Range</label>
+                            <div class="date-filters">
+                                <input type="date" id="startDate" class="form-control">
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Sources</label>
+                            <div class="source-filters" id="sourceFilters">
+                                <!-- Source filters will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="filter-group">
+                            <label class="filter-label">Quick Filters</label>
+                            <div class="quick-filters">
+                                <button class="btn btn--sm filter-btn active" data-filter="all">All Articles</button>
+                                <button class="btn btn--sm filter-btn" data-filter="today">Today</button>
+                                <button class="btn btn--sm filter-btn" data-filter="recent">Last 3 Days</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="archive-section">
+                        <h3 class="filter-title">Archive</h3>
+                        <div class="archive-links" id="archiveLinks">
+                            <!-- Archive links will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="content">
+                    <section class="hero-section">
+                        <h2 class="hero-section__title">
+                            <i class="fas fa-star"></i>
+                            Today's Highlights
+                        </h2>
+                        <div class="hero-articles" id="heroArticles">
+                            <!-- Today's articles will be populated by JavaScript -->
+                        </div>
+                    </section>
+
+                    <section class="articles-section">
+                        <div class="articles-section__header">
+                            <h2 class="articles-section__title">All Articles</h2>
+                            <div class="results-info">
+                                <span id="resultsCount">Loading articles...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="articles-grid" id="articlesGrid">
+                            <!-- Articles will be populated by JavaScript -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__content">
+                <div class="footer__info">
+                    <h3>Daily AI News</h3>
+                    <p>Curated daily news about artificial intelligence from top sources worldwide.</p>
+                </div>
+                <div class="footer__links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/koltregaskes/daily-news" target="_blank">GitHub Repository</a></li>
+                        <li><a href="#" id="toggleTheme">Toggle Theme</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer__bottom">
+                <p>&copy; 2025 Daily AI News. Powered by GitHub Pages.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.6.2/fuse.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
