@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# Create the updated HTML file
+html_content = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -70,4 +71,9 @@
 
     <script src="app.js"></script>
 </body>
-</html>
+</html>"""
+
+with open('index.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("Created index.html")

@@ -1,4 +1,5 @@
-:root {
+# Create the CSS file
+css_content = """:root {
     --primary-color: #2563eb;
     --secondary-color: #1e40af;
     --accent-color: #3b82f6;
@@ -363,4 +364,9 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
-}
+}"""
+
+with open('style.css', 'w', encoding='utf-8') as f:
+    f.write(css_content)
+
+print("Created style.css")
