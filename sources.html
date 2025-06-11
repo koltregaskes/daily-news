@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Sources</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <h1 class="nav-logo">
+                <i class="fas fa-robot"></i>
+                Daily AI News
+            </h1>
+        </div>
+    </nav>
+    <main class="main-content">
+        <div class="container">
+            <h2 class="section-title">Sources</h2>
+            <ul id="sourceList"></ul>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Daily AI News.</p>
+        </div>
+    </footer>
+    <script>
+        fetch('sources.json')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('sourceList');
+                data.forEach(s => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${s.url}" target="_blank">${s.name}</a>`;
+                    list.appendChild(li);
+                });
+            });
+    </script>
+</body>
+</html>

@@ -19,20 +19,36 @@
                     <input type="text" id="searchInput" placeholder="Search news...">
                     <i class="fas fa-search search-icon"></i>
                 </div>
-                <div class="filter-container">
-                    <select id="dateFilter">
-                        <option value="">All Dates</option>
-                    </select>
-                    <select id="sourceFilter">
-                        <option value="">All Sources</option>
-                    </select>
-                </div>
+                <a href="sources.html" class="sources-link">Sources</a>
             </div>
         </div>
     </nav>
 
-    <main class="main-content">
-        <div class="container">
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="filter-group">
+                <h3>Quick Filters</h3>
+                <button id="quickToday">Today</button>
+                <button id="quickLastWeek">Last Week</button>
+                <button id="quickAll">All</button>
+            </div>
+            <div class="filter-group">
+                <h3>Date Range</h3>
+                <input type="date" id="fromDate">
+                <input type="date" id="toDate">
+            </div>
+            <div class="filter-group">
+                <h3>Sources</h3>
+                <div id="sourceCheckboxes"></div>
+            </div>
+            <div class="filter-group">
+                <h3>Archive</h3>
+                <select id="archivePicker"></select>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="container">
             <div class="loading" id="loading">
                 <i class="fas fa-spinner fa-spin"></i>
                 <p>Loading latest AI news...</p>
@@ -61,6 +77,7 @@
             </div>
         </div>
     </main>
+    </div> <!-- end layout -->
 
     <footer class="footer">
         <div class="container">
