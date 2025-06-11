@@ -1,0 +1,8 @@
+[
+    {"name": "TechCrunch", "url": "https://techcrunch.com"},
+    {"name": "The Information", "url": "https://www.theinformation.com"},
+    {"name": "Reuters", "url": "https://www.reuters.com"},
+    {"name": "Bloomberg", "url": "https://www.bloomberg.com"},
+    {"name": "The Guardian", "url": "https://www.theguardian.com"},
+    {"name": "MIT News", "url": "https://news.mit.edu"}
+]

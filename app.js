@@ -4,6 +4,7 @@ class DailyNewsApp {
         this.filteredArticles = [];
         this.sources = new Set();
         this.dates = new Set();
+        this.tags = new Set();
 
         this.init();
     }
@@ -88,7 +89,11 @@ class DailyNewsApp {
 
         // Parse individual articles
         const articles = [];
-        const sections = content.split('\n\n').filter(section => section.trim());
+        const cleaned = content.split('\n').filter(line => {
+            return !line.includes('```hrp-text') && !line.toLowerCase().includes('thinking');
+        }).join('\n');
+
+        const sections = cleaned.split('\n\n').filter(section => section.trim());
 
         for (const section of sections) {
             const lines = section.split('\n').filter(line => line.trim());
@@ -108,6 +113,12 @@ class DailyNewsApp {
                 // Extract source from URL
                 const source = this.extractSource(url);
 
+                const tags = Array.from(new Set(title.toLowerCase()
+                    .replace(/[^a-z0-9 ]/g, '')
+                    .split(' ') 
+                    .filter(Boolean))).slice(0,5);
+                tags.forEach(t => this.tags.add(t));
+
                 articles.push({
                     title,
                     time,
@@ -117,6 +128,7 @@ class DailyNewsApp {
                     date: fileDate,
                     dateString: dateString,
                     filename: filename,
+                    tags,
                     isNoNews: false
                 });
 
@@ -169,54 +181,99 @@ class DailyNewsApp {
     }
 
     populateFilters() {
-        const dateFilter = document.getElementById('dateFilter');
-        const sourceFilter = document.getElementById('sourceFilter');
+        const sourceContainer = document.getElementById('sourceCheckboxes');
+        const archivePicker = document.getElementById('archivePicker');
 
-        // Populate date filter
-        const sortedDates = Array.from(this.dates).sort((a, b) => new Date(b) - new Date(a));
-        sortedDates.forEach(date => {
-            const option = document.createElement('option');
-            option.value = date;
-            option.textContent = date;
-            dateFilter.appendChild(option);
+        const sortedSources = Array.from(this.sources).sort();
+        sourceContainer.innerHTML = '';
+        sortedSources.forEach(source => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" value="${source}" checked> ${source}`;
+            sourceContainer.appendChild(label);
         });
 
-        // Populate source filter
-        const sortedSources = Array.from(this.sources).sort();
-        sortedSources.forEach(source => {
+        const months = new Set(Array.from(this.dates).map(d => {
+            const dt = new Date(d);
+            return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+        }));
+
+        archivePicker.innerHTML = '<option value="">All Months</option>';
+        Array.from(months).sort().forEach(m => {
             const option = document.createElement('option');
-            option.value = source;
-            option.textContent = source;
-            sourceFilter.appendChild(option);
+            option.value = m;
+            option.textContent = m;
+            archivePicker.appendChild(option);
         });
     }
 
     setupEventListeners() {
         const searchInput = document.getElementById('searchInput');
-        const dateFilter = document.getElementById('dateFilter');
-        const sourceFilter = document.getElementById('sourceFilter');
+        const fromDate = document.getElementById('fromDate');
+        const toDate = document.getElementById('toDate');
+        const sourceContainer = document.getElementById('sourceCheckboxes');
+        const archivePicker = document.getElementById('archivePicker');
+        const quickToday = document.getElementById('quickToday');
+        const quickLastWeek = document.getElementById('quickLastWeek');
+        const quickAll = document.getElementById('quickAll');
 
         searchInput.addEventListener('input', () => this.filterArticles());
-        dateFilter.addEventListener('change', () => this.filterArticles());
-        sourceFilter.addEventListener('change', () => this.filterArticles());
+        fromDate.addEventListener('change', () => this.filterArticles());
+        toDate.addEventListener('change', () => this.filterArticles());
+        sourceContainer.addEventListener('change', () => this.filterArticles());
+        archivePicker.addEventListener('change', () => this.filterArticles());
+
+        quickToday.addEventListener('click', () => {
+            const today = new Date().toISOString().split('T')[0];
+            fromDate.value = today;
+            toDate.value = today;
+            archivePicker.value = '';
+            this.filterArticles();
+        });
+
+        quickLastWeek.addEventListener('click', () => {
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 7);
+            fromDate.value = lastWeek.toISOString().split('T')[0];
+            toDate.value = today.toISOString().split('T')[0];
+            archivePicker.value = '';
+            this.filterArticles();
+        });
+
+        quickAll.addEventListener('click', () => {
+            fromDate.value = '';
+            toDate.value = '';
+            archivePicker.value = '';
+            this.filterArticles();
+        });
     }
 
     filterArticles() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        const selectedDate = document.getElementById('dateFilter').value;
-        const selectedSource = document.getElementById('sourceFilter').value;
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const archive = document.getElementById('archivePicker').value;
+        const selectedSources = Array.from(document.querySelectorAll('#sourceCheckboxes input:checked')).map(i => i.value);
 
         this.filteredArticles = this.articles.filter(article => {
-            const matchesSearch = !searchTerm || 
+            const articleDate = new Date(article.date);
+
+            const matchesSearch = !searchTerm ||
                 article.title.toLowerCase().includes(searchTerm);
 
-            const matchesDate = !selectedDate || 
-                article.dateString === selectedDate;
+            let matchesRange = true;
+            if (fromDate) matchesRange = matchesRange && articleDate >= new Date(fromDate);
+            if (toDate) matchesRange = matchesRange && articleDate <= new Date(toDate);
 
-            const matchesSource = !selectedSource || 
-                article.source === selectedSource;
+            let matchesArchive = true;
+            if (archive) {
+                const [year, month] = archive.split('-');
+                matchesArchive = articleDate.getFullYear() === parseInt(year) && (articleDate.getMonth()+1) === parseInt(month);
+            }
 
-            return matchesSearch && matchesDate && matchesSource;
+            const matchesSource = selectedSources.length === 0 || selectedSources.includes(article.source);
+
+            return matchesSearch && matchesRange && matchesArchive && matchesSource;
         });
 
         this.displayArticles();
@@ -304,6 +361,9 @@ class DailyNewsApp {
                     <a href="${article.url}" target="_blank" rel="noopener noreferrer" class="external-link">
                         Read more <i class="fas fa-external-link-alt"></i>
                     </a>
+                </div>
+                <div class="tag-list">
+                    ${article.tags.map(t => `<span class="tag">${t}</span>`).join('')}
                 </div>
             `;
         }
