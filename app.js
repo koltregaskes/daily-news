@@ -5,6 +5,8 @@ class DailyNewsApp {
         this.sources = new Set();
         this.dates = new Set();
         this.tags = new Set();
+        this.favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
+        this.flags = JSON.parse(localStorage.getItem('flags') || '{}');
 
         this.init();
     }
@@ -273,7 +275,7 @@ class DailyNewsApp {
 
             const matchesSource = selectedSources.length === 0 || selectedSources.includes(article.source);
 
-            return matchesSearch && matchesRange && matchesArchive && matchesSource;
+            return matchesSearch && matchesRange && matchesArchive && matchesSource && !article.isNoNews;
         });
 
         this.displayArticles();
@@ -282,18 +284,34 @@ class DailyNewsApp {
     displayArticles() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const favoriteArticles = this.filteredArticles.filter(a => this.favorites.has(a.title));
+        const remainingArticles = this.filteredArticles.filter(a => !this.favorites.has(a.title));
 
-        const todaysArticles = this.filteredArticles.filter(article => {
+        const todaysArticles = remainingArticles.filter(article => {
             const articleDate = new Date(article.date);
             articleDate.setHours(0, 0, 0, 0);
             return articleDate.getTime() === today.getTime();
         });
 
-        const otherArticles = this.filteredArticles.filter(article => {
+        const otherArticles = remainingArticles.filter(article => {
             const articleDate = new Date(article.date);
             articleDate.setHours(0, 0, 0, 0);
             return articleDate.getTime() !== today.getTime();
         });
+
+        // Display highlighted favorites
+        const favSection = document.getElementById('favoriteNews');
+        const favGrid = document.getElementById('favoriteGrid');
+
+        if (favoriteArticles.length > 0) {
+            favSection.style.display = 'block';
+            favGrid.innerHTML = '';
+            favoriteArticles.forEach(article => {
+                favGrid.appendChild(this.createArticleCard(article, false, true));
+            });
+        } else {
+            favSection.style.display = 'none';
+        }
 
         // Display today's news
         const todaysSection = document.getElementById('todaysNews');
@@ -314,12 +332,12 @@ class DailyNewsApp {
         const allGrid = document.getElementById('allGrid');
         const noResults = document.getElementById('noResults');
 
-        if (this.filteredArticles.length > 0) {
+        if (remainingArticles.length > 0) {
             allSection.style.display = 'block';
             noResults.style.display = 'none';
 
             allGrid.innerHTML = '';
-            this.filteredArticles.forEach(article => {
+            otherArticles.forEach(article => {
                 allGrid.appendChild(this.createArticleCard(article, false));
             });
         } else {
@@ -328,9 +346,9 @@ class DailyNewsApp {
         }
     }
 
-    createArticleCard(article, isToday) {
+    createArticleCard(article, isToday, isFavorite = false) {
         const card = document.createElement('div');
-        card.className = `news-card ${isToday ? 'today' : ''} ${article.isNoNews ? 'no-news' : ''}`;
+        card.className = `news-card ${isToday ? 'today' : ''} ${article.isNoNews ? 'no-news' : ''} ${isFavorite ? 'highlight' : ''}`;
 
         if (article.isNoNews) {
             card.innerHTML = `
@@ -347,6 +365,10 @@ class DailyNewsApp {
                 <div class="card-header">
                     <span class="card-date">${article.dateString}</span>
                     <span class="card-source">${article.source}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="flag-btn" title="Report"><i class="fas fa-flag"></i></button>
+                    <button class="fav-btn" title="Highlight">${isFavorite ? '<i class="fas fa-star"></i>' : '<i class="far fa-star"></i>'}</button>
                 </div>
                 <h3 class="card-title">
                     <a href="${article.url}" target="_blank" rel="noopener noreferrer">
@@ -366,9 +388,76 @@ class DailyNewsApp {
                     ${article.tags.map(t => `<span class="tag">${t}</span>`).join('')}
                 </div>
             `;
+
+            const flagBtn = card.querySelector('.flag-btn');
+            const favBtn = card.querySelector('.fav-btn');
+
+            flagBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showFlagMenu(article);
+            });
+
+            favBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleFavorite(article);
+            });
         }
 
         return card;
+    }
+
+    toggleFavorite(article) {
+        if (this.favorites.has(article.title)) {
+            this.favorites.delete(article.title);
+        } else {
+            this.favorites.add(article.title);
+        }
+        localStorage.setItem('favorites', JSON.stringify(Array.from(this.favorites)));
+        this.displayArticles();
+    }
+
+    showFlagMenu(article) {
+        const choice = prompt('Report this article:\n1) Not AI\n2) Duplicate');
+        if (choice === '1') {
+            this.reportArticle(article, 'not-ai');
+        } else if (choice === '2') {
+            this.showDuplicateDialog(article);
+        }
+    }
+
+    reportArticle(article, reason) {
+        this.flags[article.title] = this.flags[article.title] || [];
+        if (!this.flags[article.title].includes(reason)) {
+            this.flags[article.title].push(reason);
+            localStorage.setItem('flags', JSON.stringify(this.flags));
+        }
+        alert(`Reported "${article.title}" as ${reason}`);
+    }
+
+    showDuplicateDialog(article) {
+        const dialog = document.getElementById('duplicateDialog');
+        const searchInput = document.getElementById('duplicateSearch');
+        const results = document.getElementById('duplicateResults');
+        const closeBtn = document.getElementById('closeDuplicateDialog');
+
+        dialog.style.display = 'flex';
+        searchInput.value = '';
+        results.innerHTML = '';
+
+        const updateResults = () => {
+            const term = searchInput.value.toLowerCase();
+            const matches = this.articles.filter(a => a !== article && a.title.toLowerCase().includes(term));
+            results.innerHTML = matches.map(m => `<li>${m.title}</li>`).join('');
+        };
+        searchInput.addEventListener('input', updateResults);
+        updateResults();
+
+        const close = () => {
+            dialog.style.display = 'none';
+            searchInput.removeEventListener('input', updateResults);
+            closeBtn.removeEventListener('click', close);
+        };
+        closeBtn.addEventListener('click', close);
     }
 }
 
