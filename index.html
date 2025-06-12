@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily AI News</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -20,6 +23,9 @@
                     <i class="fas fa-search search-icon"></i>
                 </div>
                 <a href="sources.html" class="sources-link">Sources</a>
+                <button id="themeToggle" class="theme-toggle" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
             </div>
         </div>
     </nav>
@@ -44,6 +50,16 @@
             <div class="filter-group">
                 <h3>Archive</h3>
                 <select id="archivePicker"></select>
+            </div>
+            <div class="filter-group">
+                <h3>View Options</h3>
+                <select id="groupBy">
+                    <option value="">No Grouping</option>
+                    <option value="date">Group by Date</option>
+                    <option value="source">Group by Source</option>
+                </select>
+                <label><input type="checkbox" id="highlightOnly"> Highlights only</label>
+                <label><input type="checkbox" id="hideNotAI"> Hide 'Not AI'</label>
             </div>
         </aside>
 

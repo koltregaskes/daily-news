@@ -7,6 +7,8 @@ class DailyNewsApp {
         this.tags = new Set();
         this.favorites = new Set(JSON.parse(localStorage.getItem('favorites') || '[]'));
         this.flags = JSON.parse(localStorage.getItem('flags') || '{}');
+        this.theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.body.classList.toggle('dark', this.theme === 'dark');
 
         this.init();
     }
@@ -217,12 +219,20 @@ class DailyNewsApp {
         const quickToday = document.getElementById('quickToday');
         const quickLastWeek = document.getElementById('quickLastWeek');
         const quickAll = document.getElementById('quickAll');
+        const groupBy = document.getElementById('groupBy');
+        const highlightOnly = document.getElementById('highlightOnly');
+        const hideNotAI = document.getElementById('hideNotAI');
+        const themeToggle = document.getElementById('themeToggle');
 
         searchInput.addEventListener('input', () => this.filterArticles());
         fromDate.addEventListener('change', () => this.filterArticles());
         toDate.addEventListener('change', () => this.filterArticles());
         sourceContainer.addEventListener('change', () => this.filterArticles());
         archivePicker.addEventListener('change', () => this.filterArticles());
+        groupBy.addEventListener('change', () => this.displayArticles());
+        highlightOnly.addEventListener('change', () => this.filterArticles());
+        hideNotAI.addEventListener('change', () => this.filterArticles());
+        themeToggle.addEventListener('click', () => this.toggleTheme());
 
         quickToday.addEventListener('click', () => {
             const today = new Date().toISOString().split('T')[0];
@@ -255,6 +265,8 @@ class DailyNewsApp {
         const fromDate = document.getElementById('fromDate').value;
         const toDate = document.getElementById('toDate').value;
         const archive = document.getElementById('archivePicker').value;
+        const highlightOnly = document.getElementById('highlightOnly').checked;
+        const hideNotAI = document.getElementById('hideNotAI').checked;
         const selectedSources = Array.from(document.querySelectorAll('#sourceCheckboxes input:checked')).map(i => i.value);
 
         this.filteredArticles = this.articles.filter(article => {
@@ -274,8 +286,11 @@ class DailyNewsApp {
             }
 
             const matchesSource = selectedSources.length === 0 || selectedSources.includes(article.source);
+            const isFavorite = this.favorites.has(article.title);
+            const flaggedNotAI = (this.flags[article.title] || []).includes('not-ai');
 
-            return matchesSearch && matchesRange && matchesArchive && matchesSource && !article.isNoNews;
+            return matchesSearch && matchesRange && matchesArchive && matchesSource && !article.isNoNews &&
+                   (!highlightOnly || isFavorite) && !(hideNotAI && flaggedNotAI);
         });
 
         this.displayArticles();
@@ -284,6 +299,8 @@ class DailyNewsApp {
     displayArticles() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const highlightOnly = document.getElementById('highlightOnly').checked;
+        const groupBy = document.getElementById('groupBy').value;
         const favoriteArticles = this.filteredArticles.filter(a => this.favorites.has(a.title));
         const remainingArticles = this.filteredArticles.filter(a => !this.favorites.has(a.title));
 
@@ -313,9 +330,23 @@ class DailyNewsApp {
             favSection.style.display = 'none';
         }
 
-        // Display today's news
         const todaysSection = document.getElementById('todaysNews');
         const todaysGrid = document.getElementById('todaysGrid');
+        const allSection = document.getElementById('allNews');
+        const allGrid = document.getElementById('allGrid');
+        const noResults = document.getElementById('noResults');
+
+        if (highlightOnly) {
+            favSection.style.display = favoriteArticles.length > 0 ? 'block' : 'none';
+            allSection.style.display = 'none';
+            todaysSection.style.display = 'none';
+            favGrid.innerHTML = '';
+            favoriteArticles.forEach(a => favGrid.appendChild(this.createArticleCard(a, false, true)));
+            noResults.style.display = favoriteArticles.length ? 'none' : 'block';
+            return;
+        }
+
+        // Display today's news
 
         if (todaysArticles.length > 0) {
             todaysSection.style.display = 'block';
@@ -328,18 +359,50 @@ class DailyNewsApp {
         }
 
         // Display all news
-        const allSection = document.getElementById('allNews');
-        const allGrid = document.getElementById('allGrid');
-        const noResults = document.getElementById('noResults');
 
         if (remainingArticles.length > 0) {
             allSection.style.display = 'block';
             noResults.style.display = 'none';
 
             allGrid.innerHTML = '';
-            otherArticles.forEach(article => {
-                allGrid.appendChild(this.createArticleCard(article, false));
-            });
+
+            if (groupBy === 'source') {
+                const groups = {};
+                otherArticles.forEach(a => {
+                    groups[a.source] = groups[a.source] || [];
+                    groups[a.source].push(a);
+                });
+                Object.keys(groups).sort().forEach(src => {
+                    const h = document.createElement('h3');
+                    h.className = 'group-title';
+                    h.textContent = src;
+                    allGrid.appendChild(h);
+                    const g = document.createElement('div');
+                    g.className = 'news-grid';
+                    groups[src].forEach(a => g.appendChild(this.createArticleCard(a, false)));
+                    allGrid.appendChild(g);
+                });
+            } else if (groupBy === 'date') {
+                const groups = {};
+                otherArticles.forEach(a => {
+                    groups[a.dateString] = groups[a.dateString] || [];
+                    groups[a.dateString].push(a);
+                });
+                Object.keys(groups).forEach(date => {
+                    const h = document.createElement('h3');
+                    h.className = 'group-title';
+                    h.textContent = date;
+                    allGrid.appendChild(h);
+                    const g = document.createElement('div');
+                    g.className = 'news-grid';
+                    groups[date].forEach(a => g.appendChild(this.createArticleCard(a, false)));
+                    allGrid.appendChild(g);
+                });
+            } else {
+                otherArticles.forEach(article => {
+                    allGrid.appendChild(this.createArticleCard(article, false));
+                });
+            }
         } else {
             allSection.style.display = 'none';
             noResults.style.display = 'block';
@@ -414,6 +477,12 @@ class DailyNewsApp {
         }
         localStorage.setItem('favorites', JSON.stringify(Array.from(this.favorites)));
         this.displayArticles();
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        document.body.classList.toggle('dark', this.theme === 'dark');
+        localStorage.setItem('theme', this.theme);
     }
 
     showFlagMenu(article) {
